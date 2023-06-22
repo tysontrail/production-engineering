@@ -95,7 +95,14 @@ def gas_density(spec_gravity, pressure, temperature, z):
 
 
 def min_gas_velocity(gas_density):
-    # gas density in lb/ft3
+    """
+    Calculates the minimum gas velocity in ft/s using the Turner correlation.
+
+    Args:
+        gas_density (float): gas density in lb/ft3
+
+    Returns: min_gas_vel (float): minimum gas velocity for the gas to lift water in ft/s
+    """
 
     # surface tension in dyne/cm (ref values: water = 60, condensate = 20)
     surface_tension = 60
@@ -132,13 +139,12 @@ def critical_gas_rate(
     """
     # convert pressure to psia
     pressure = pressure / 6.894757
-    print("pressure = ", pressure)
+
     # convert temperature to degR
     temperature = (temperature + 273.15) * 9 / 5
-    print("temperature = ", temperature)
+
     # calculate flow area of the tubing in ft2
     flow_area = (tubing_id * 0.00328084) ** 2 * math.pi / 4
-    print("flow_area = ", flow_area)
 
     # critical gas rate in E3m3/d
     crit_gas_rate = (
@@ -157,23 +163,24 @@ if __name__ == "__main__":
     # test case
 
     # input parameters
-    pressure = 700  # kPa
+    pressure = 1000  # kPa
     temperature = 10  # degC
     tubing_id = 73  # mm
     spec_gravity = 0.70
-    mol_frac_n2 = 0.1
-    mol_frac_co2 = 0.2
-    mol_frac_h2s = 0.0
+    mol_frac_n2 = 0
+    mol_frac_co2 = 0
+    mol_frac_h2s = 0
 
     z = gas_compressibility_factor(
         pressure, temperature, spec_gravity, mol_frac_n2, mol_frac_co2, mol_frac_h2s
     )
-    print("z = ", z)
+    print("z (unitless)= ", z)
 
     dg = gas_density(spec_gravity, pressure, temperature, z)
+    print("dg (lb/ft3) = ", dg)
 
     vg = min_gas_velocity(dg)
-    print("vg = ", vg)
+    print("vg (ft/s)= ", vg)
 
     qg = critical_gas_rate(pressure, vg, tubing_id, temperature, z)
-    print("qg = ", qg)
+    print("qg (E3m3/d)= ", qg)
