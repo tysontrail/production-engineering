@@ -68,9 +68,34 @@ def gas_compressibility_factor(
     return Z
 
 
-def min_gas_velocity(spec_gravity):
+def gas_density(spec_gravity, pressure, temperature, z):
+    """
+    Calculates the gas density in lb/ft3 using the ideal gas law.
+
+    Args:
+        spec_gravity (float): Specific gravity of the gas.
+        pressure (float): Instantaneous pressure in kPa.
+        temperature (float): Instantaneous temperature in degC.
+        z (float): Instantaneous gas compressibility factor, unitless.
+
+    Returns:
+        float: Gas density in lb/ft3.
+    """
+
+    # convert pressure to psia
+    pressure = pressure / 6.894757
+
+    # convert temperature to degR
+    temperature = (temperature + 273.15) * 9 / 5
+
+    # gas density, lb/ft3
+    gas_density = 2.699 * spec_gravity * pressure / (z * (temperature))
+
+    return gas_density
+
+
+def min_gas_velocity(gas_density):
     # gas density in lb/ft3
-    gas_density = spec_gravity * 0.763
 
     # surface tension in dyne/cm (ref values: water = 60, condensate = 20)
     surface_tension = 60
@@ -89,7 +114,66 @@ def min_gas_velocity(spec_gravity):
     return min_gas_vel
 
 
+def critical_gas_rate(
+    pressure, velocity, tubing_id, temperature, gas_compressibility_factor
+):
+    """
+    Calculates the critical gas rate in E3m3/d using the Turner correlation.
+
+    Args:
+        pressure (float): Instantaneous pressure in kPa.
+        velocity (float): Instantaneous velocity in ft/s.
+        tubing_id (float): Tubing inner diameter in mm.
+        temperature (float): Instantaneous temperature in degC.
+        gas_compressibility_factor (float): Instantaneous gas compressibility factor, unitless.
+
+    Returns: crit_gas_rate (float): critical gas rate in E3m3/d.
+
+    """
+    # convert pressure to psia
+    pressure = pressure / 6.894757
+    print("pressure = ", pressure)
+    # convert temperature to degR
+    temperature = (temperature + 273.15) * 9 / 5
+    print("temperature = ", temperature)
+    # calculate flow area of the tubing in ft2
+    flow_area = (tubing_id * 0.00328084) ** 2 * math.pi / 4
+    print("flow_area = ", flow_area)
+
+    # critical gas rate in E3m3/d
+    crit_gas_rate = (
+        3.067
+        * pressure
+        * velocity
+        * flow_area
+        / (temperature * gas_compressibility_factor)
+        * 28.317
+    )
+
+    return crit_gas_rate
+
+
 if __name__ == "__main__":
     # test case
-    print(gas_compressibility_factor(1000, 100, 0.6, 0.01, 0.01, 0.01))
-    print(min_gas_velocity(0.71))
+
+    # input parameters
+    pressure = 700  # kPa
+    temperature = 10  # degC
+    tubing_id = 73  # mm
+    spec_gravity = 0.70
+    mol_frac_n2 = 0.1
+    mol_frac_co2 = 0.2
+    mol_frac_h2s = 0.0
+
+    z = gas_compressibility_factor(
+        pressure, temperature, spec_gravity, mol_frac_n2, mol_frac_co2, mol_frac_h2s
+    )
+    print("z = ", z)
+
+    dg = gas_density(spec_gravity, pressure, temperature, z)
+
+    vg = min_gas_velocity(dg)
+    print("vg = ", vg)
+
+    qg = critical_gas_rate(pressure, vg, tubing_id, temperature, z)
+    print("qg = ", qg)
