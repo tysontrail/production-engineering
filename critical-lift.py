@@ -1,5 +1,5 @@
 """
-This module provides functions for calculating gas properties and critical flow rates using empirical correlations.
+This module provides functions for calculating gas properties and critical flow rates for natural gas wells using empirical correlations.
 
 Functions:
 - gas_compressibility_factor(pressure, temperature, spec_gravity, mol_perc_n2, mol_perc_co2, mol_perc_h2s):
