@@ -1,8 +1,29 @@
+"""
+This module provides functions for calculating gas properties and critical flow rates using empirical correlations.
+
+Functions:
+- gas_compressibility_factor(pressure, temperature, spec_gravity, mol_perc_n2, mol_perc_co2, mol_perc_h2s):
+  Calculates the gas compressibility factor (Z) using the Brill and Beggs correlation.
+
+- gas_density(spec_gravity, pressure, temperature, z):
+  Calculates the gas density in lb/ft3 using the ideal gas law.
+
+- min_gas_velocity(gas_density):
+  Calculates the minimum gas velocity in ft/s using the Turner correlation.
+
+- critical_gas_rate(pressure, velocity, tubing_id, temperature, gas_compressibility_factor):
+  Calculates the critical gas rate in E3m3/d using the Turner correlation.
+
+"""
+__author__ = "Tyson Trail"
+__version__ = "1.0.0"
+__maintainer__ = "Tyson Trail"
+
 import math
 
 
 def gas_compressibility_factor(
-    pressure, temperature, spec_gravity, mol_frac_n2, mol_frac_co2, mol_frac_h2s
+    pressure, temperature, spec_gravity, mol_perc_n2, mol_perc_co2, mol_perc_h2s
 ):
     """
     Calculates the gas compressibility factor (Z) using the Brill and Beggs correlation.
@@ -11,9 +32,9 @@ def gas_compressibility_factor(
         pressure (float): Instantaneous pressure in kPa.
         temperature (float): Instantaneous temperature in degC.
         spec_gravity (float): Specific gravity of the gas.
-        mol_frac_n2 (float): Molar fraction of nitrogen (N2) in the gas.
-        mol_frac_co2 (float): Molar fraction of carbon dioxide (CO2) in the gas.
-        mol_frac_h2s (float): Molar fraction of hydrogen sulfide (H2S) in the gas.
+        mol_frac_n2 (float): Molar percentage of nitrogen (N2) in the gas.
+        mol_frac_co2 (float): Molar percentage of carbon dioxide (CO2) in the gas.
+        mol_frac_h2s (float): Molar precentage of hydrogen sulfide (H2S) in the gas.
 
     Returns:
         float: Gas compressibility factor (Z), unitless.
@@ -22,9 +43,9 @@ def gas_compressibility_factor(
     pseudo_crit_press = (
         678
         - 50 * (spec_gravity - 0.5)
-        - 206.7 * mol_frac_n2
-        + 440 * mol_frac_co2
-        + 606.7 * mol_frac_h2s
+        - 206.7 * mol_perc_n2 / 100
+        + 440 * mol_perc_co2 / 100
+        + 606.7 * mol_perc_h2s / 100
     ) * 6.894757
 
     # pseudo-critical temperature, K
@@ -32,9 +53,9 @@ def gas_compressibility_factor(
         (
             326
             + 315.7 * (spec_gravity - 0.5)
-            - 240 * mol_frac_n2
-            - 83.3 * mol_frac_co2
-            + 133.3 * mol_frac_h2s
+            - 240 * mol_perc_n2 / 100
+            - 83.3 * mol_perc_co2 / 100
+            + 133.3 * mol_perc_h2s / 100
         )
         * 5
         / 9
@@ -160,27 +181,27 @@ def critical_gas_rate(
 
 
 if __name__ == "__main__":
-    # test case
+    # testing
 
     # input parameters
-    pressure = 1000  # kPa
+    pressure = 10000  # kPa
     temperature = 10  # degC
-    tubing_id = 73  # mm
-    spec_gravity = 0.70
-    mol_frac_n2 = 0
-    mol_frac_co2 = 0
-    mol_frac_h2s = 0
+    tubing_id = 76  # mm
+    spec_gravity = 0.65
+    mol_perc_n2 = 0.0
+    mol_perc_co2 = 0.0
+    mol_perc_h2s = 0.0
 
     z = gas_compressibility_factor(
-        pressure, temperature, spec_gravity, mol_frac_n2, mol_frac_co2, mol_frac_h2s
+        pressure, temperature, spec_gravity, mol_perc_n2, mol_perc_co2, mol_perc_h2s
     )
-    print("z (unitless)= ", z)
+    print("\nz (unitless)= ", round(z, 4))
 
     dg = gas_density(spec_gravity, pressure, temperature, z)
-    print("dg (lb/ft3) = ", dg)
+    print("dg (lb/ft3) = ", round(dg, 4))
 
     vg = min_gas_velocity(dg)
-    print("vg (ft/s)= ", vg)
+    print("vg (ft/s)= ", round(vg, 4))
 
     qg = critical_gas_rate(pressure, vg, tubing_id, temperature, z)
-    print("qg (E3m3/d)= ", qg)
+    print("qg (E3m3/d)= ", round(qg, 4), "\n")
