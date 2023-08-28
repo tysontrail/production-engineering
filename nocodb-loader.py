@@ -1,16 +1,64 @@
+"""
+Module: nododb-loader.py
+
+Summary:
+This module provides utilities for updating a NocoDB database using data from a CSV file.
+The main operations include:
+1. Reading configurations from a specified file (defaulted to "config.txt").
+2. Loading data from a given CSV file path.
+3. Establishing a connection to a server specified in the configuration.
+4. Fetching existing data from NocoDB to create a mapping of GDC_UWI to rowID.
+5. Iterating through the loaded CSV data to update the NocoDB entries based on a specified mapping.
+
+Key Functions:
+- get_config_value(key, filename="config.txt"): Fetches a configuration value for a given key from the provided configuration file.
+
+Usage:
+To use the script, make sure the "config.txt" file is populated with the required configurations.
+Once set up, run the script to update the NocoDB database with the data from the CSV file.
+
+Note:
+Ensure that the server, API key, and other sensitive details are kept confidential and are not hard-coded within the script.
+"""
+
+__author__ = "Tyson Trail"
+__version__ = "1.0.0"
+__maintainer__ = "Tyson Trail"
+
 import http.client
 import pandas as pd
 import json
 
+# -----------------
+# Helper Functions
+# -----------------
+
 
 # Helper function to fetch configuration values from config file
 def get_config_value(key, filename="config.txt"):
+    """
+    Fetches a configuration value for a given key from the provided configuration file.
+
+    Args:
+    - key (str): The key whose value is to be fetched.
+    - filename (str, optional): The name of the configuration file. Defaults to "config.txt".
+
+    Returns:
+    - str: The corresponding value of the given key.
+
+    Raises:
+    - ValueError: If the key is not found in the configuration file.
+    """
     with open(filename, "r") as file:
         for line in file:
             if line.startswith(key):
                 return line.split("=")[1].strip()
     raise ValueError(f"{key} not found in configuration file.")
 
+
+# -------------------------------------
+# Loading Configuration and CSV Data
+# -------------------------------------
 
 # Load spreadsheet data
 csv_path = get_config_value("CSV_PATH")
@@ -36,6 +84,10 @@ api_base_path = get_config_value("API_BASE_PATH")
 table_path = get_config_value("TABLE_PATH")
 view_path = get_config_value("VIEW_PATH")
 
+# -------------------------------------
+# Fetching Existing Data from NocoDB
+# -------------------------------------
+
 # Fetch all rows from the table to create a mapping of GDC_UWI to rowID
 conn.request("GET", f"{api_base_path}{table_path}{view_path}?l=*", headers=headers)
 res = conn.getresponse()
@@ -54,6 +106,10 @@ else:
     print(res.read())
     # Exit the script if the request fails
     exit(1)
+
+# --------------------------
+# Updating Data in NocoDB
+# --------------------------
 
 # Iterate through rows in the spreadsheet
 for index, row in df.iterrows():
