@@ -7,3 +7,6 @@ This repo contains packages and scripts for petroleum engineering 🛢️ automa
 
 ## [multi-select.py](https://github.com/tysontrail/production-engineering/blob/main/multi-select.py) 📊
 - This module provides function scripts for extension functions and a property change event handler for selecting multiple cells in an Ignition Power Table column for bulk value updates.
+
+## [nocodb-loader.py](https://github.com/tysontrail/production-engineering/blob/main/nocodb-loader.py) 💾
+- This module provides utilities for updating a NocoDB database using data from a CSV file.
