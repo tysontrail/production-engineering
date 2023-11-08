@@ -43,20 +43,24 @@ api = mygeotab.API(username, password, database)
 api.authenticate()
 
 # Get all devices, trips, and drivers
-# devices = api.get("Device", resultsLimit=1)
 trips = api.get("Trip", resultsLimit=100, fromDate="2023-10-10", toDate="2023-10-12")
 drivers = api.get("User", resultsLimit=100)
 groups = api.get("Group", resultsLimit=100)
 
 # Convert to pandas dataframes
-# devices = pd.DataFrame(devices)
 trips = pd.DataFrame(trips)
 drivers = pd.DataFrame(drivers)
-print(drivers.head())
+print(drivers.columns.values)
 groups = pd.DataFrame(groups)
 
+# -------------------------------------
+# Transforming Data
+# -------------------------------------
 
-# Extract the 'id' from the 'Driver' column
+# Transform trips table
+
+
+# Extract the 'id' from the 'Driver' column dictionary
 def get_driver_id(driver_info):
     # Check if driver_info is a dictionary and has an 'id' key
     if isinstance(driver_info, dict):
@@ -83,43 +87,124 @@ trips["driverid"] = trips["driver"].apply(get_driver_id)
 # Drop the original 'Driver' column
 trips = trips.drop("driver", axis=1)
 
-# Transform drivers
+# Transform drivers table
+
 # Explode the driverGroups column
 drivers = drivers.explode("driverGroups")
 
 # Extract the number from the dictionaries in 'driverGroups'
-drivers["driverGroupIDs"] = drivers["driverGroups"].apply(
+drivers["driverGroupID"] = drivers["driverGroups"].apply(
     lambda x: x["id"] if isinstance(x, dict) and "id" in x else x
 )
 
 # Drop the original 'driverGroups' column
 drivers = drivers.drop("driverGroups", axis=1)
 
+# -------------------------------------
+# Merging Data
+# -------------------------------------
+
+# Merge trips and drivers
+trips = trips.merge(drivers, left_on="driverid", right_on="id", how="left")
+
+# Merge trips and groups
+trips = trips.merge(groups, left_on="driverGroupID", right_on="id", how="left")
+
+# -------------------------------------
+# Cleaning Data
+# -------------------------------------
+
+# Rename columns
+trips = trips.rename(
+    columns={
+        "id_x": "tripID",
+        "name_x": "email",
+        "name_y": "groupName",
+    }
+)
+# Drop unnecessary columns
+trips = trips.drop(
+    [
+        "id_y",
+        "keys",
+        "viewDriversOwnDataOnly",
+        "licenseProvince",
+        "licenseNumber",
+        "acceptedEULA",
+        "driveGuideVersion",
+        "wifiEULA",
+        "activeDashboardReports",
+        "bookmarks",
+        "availableDashboardReports",
+        "cannedResponseOptions",
+        "changePassword",
+        "comment",
+        "companyGroups",
+        "mediaFiles",
+        "dateFormat",
+        "phoneNumber",
+        "phoneNumberExtension",
+        "designation",
+        "displayCurrency",
+        "countryCode",
+        "phoneNumber",
+        "defaultGoogleMapStyle",
+        "defaultMapEngine",
+        "defaultOpenStreetMapStyle",
+        "defaultHereMapStyle",
+        "defaultPage",
+        "employeeNo",
+        "fuelEconomyUnit",
+        "electricEnergyEconomyUnit",
+        "hosRuleSet",
+        "isYardMoveEnabled",
+        "isPersonalConveyanceEnabled",
+        "isExemptHOSEnabled",
+        "isAdverseDrivingEnabled",
+        "authorityName",
+        "authorityAddress",
+        "isEULAAccepted",
+        "isNewsEnabled",
+        "isServiceUpdatesEnabled",
+        "isLabsEnabled",
+        "isMetric",
+        "language",
+        "firstDayOfWeek",
+        "privateUserGroups",
+        "reportGroups",
+        "securityGroups",
+        "showClickOnceWarning",
+        "timeZoneId",
+        "userAuthenticationType",
+        "zoneDisplayMode",
+        "companyName",
+        "companyAddress",
+        "carrierNumber",
+        "lastAccessDate",
+        "isDriver",
+        "isEmailReportEnabled",
+        "featurePreview",
+        "isAutoAdded",
+        "activeDefaultDashboards",
+        "jobPriorities",
+        "maxPCDistancePerDay",
+        "accessGroupFilter",
+        "isGlobalReportingGroup",
+        "children",
+        "color",
+        "comments",
+        "id",
+        "reference",
+    ],
+    axis=1,
+)
+
+print(trips.columns.values)
+# -------------------------------------
+# Exporting Data
+# -------------------------------------
+
 # Export to CSV
-# devices.to_csv("devices.csv")
 trips.to_csv("trips.csv")
-drivers.to_csv("drivers.csv")
+# drivers.to_csv("drivers.csv")
 # groups.to_csv("groups.csv")
-
-# Print column names
-# print(f"Device Columns: {devices.columns}")
-# print(f"Trip Columns: {trips.columns}")
-# print(f"Driver Columns: {drivers.columns}")
-# print(f"Group Columns: {groups.columns}")
-
-# Adjust display options
-# pd.set_option("display.max_rows", None)
-# pd.set_option("display.max_columns", None)
-
-# print(drivers.head(10))
-
-# print(f"Driver Columns: {drivers.columns}")
-
-# for device in devices:
-#     print(device["name"])
-#     print(device["groups"])
-
-# for index, driver in enumerate(drivers):
-#     driver_name = driver["name"]
-#     driver_groups = driver.get("driverGroups", "No groups")
-#     print(f"{index + 1}. {driver_name} {driver_groups}")
