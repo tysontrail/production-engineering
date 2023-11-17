@@ -11,7 +11,7 @@ This repo contains packages and scripts for petroleum engineering 🛢️ automa
 ## [nocodb-loader.py](https://github.com/tysontrail/production-engineering/blob/main/nocodb-loader.py) 💾
 - This module provides utilities for updating a NocoDB database using data from a CSV file.
 
-## [ignition-well-data.py] 🔥
+## [ignition-well-data.py](ignition-well-data.py) 🔥
 - This module serves as a handler for HTTP POST requests to fetch well meter data. It is designed to work within an Ignition environment and interacts with the Ignition system's database and tag history. The handler processes incoming requests, extracts the necessary parameters, fetches data for each specified Unique Well Identifier (UWI), and returns the data in a JSON format.
 
 ## [geotab.py] 🚚
