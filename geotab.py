@@ -1,3 +1,65 @@
+"""
+Module Summary: Geotab Data Processing
+
+Description:
+This Python module integrates with the Geotab API to fetch and process data related to vehicle trips,
+drivers, and groups. The script performs data extraction, transformation, and loading (ETL) operations
+to prepare the data for analysis. It primarily uses the pandas library for data manipulation, along
+with the json module for handling JSON data structures.
+
+Key Components:
+
+Helper Functions:
+1. get_config_value:
+   - Fetches configuration values (like username, password, and database) from a specified
+     configuration file.
+   - Inputs: Configuration key and optional filename.
+   - Outputs: Corresponding configuration value as a string.
+
+2. get_driver_id:
+   - Extracts the driver's ID from a dictionary or string representation of a dictionary.
+   - Handles cases where the driver information is either a dictionary or a JSON string.
+   - Returns the driver's ID or None if not found.
+
+Main Script:
+- Configuration and API Authentication:
+  - Reads the Geotab API credentials and database information from a configuration file.
+  - Authenticates with the Geotab API.
+
+- Data Extraction:
+  - Fetches data related to trips, drivers, and groups from the Geotab API.
+  - Converts the fetched data into pandas DataFrames for ease of manipulation.
+
+- Data Transformation:
+  - Processes the trips DataFrame by extracting driver IDs using the get_driver_id function
+    and removing unnecessary columns.
+  - Transforms the drivers DataFrame by exploding the driverGroups column and extracting group IDs.
+  - Performs necessary data cleaning and formatting operations.
+
+- Data Merging:
+  - Merges the trips DataFrame with the drivers DataFrame based on driver IDs.
+  - Further merges the resulting DataFrame with the groups DataFrame based on group IDs.
+
+- Final Data Cleaning:
+  - Renames columns for clarity and readability.
+  - Drops a significant number of unnecessary columns to streamline the dataset.
+
+- Exporting Data:
+  - Exports the final processed DataFrame to a CSV file named 'trips.csv'.
+
+Usage:
+The script is intended to be run as a standalone module to process data from the Geotab API. It requires
+a 'config.txt' file with the necessary Geotab API credentials and database information.
+
+Output:
+The output is a cleaned and consolidated CSV file ('trips.csv') containing trip data with corresponding
+driver and group information. This file is suitable for further analysis or reporting.
+
+Note:
+This module is designed specifically for integration with the Geotab API and assumes a particular data
+structure returned by the API. Any changes in the API's data format may require modifications to the script.
+"""
+
 import mygeotab
 import pandas as pd
 import json
