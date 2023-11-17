@@ -14,7 +14,7 @@ This repo contains packages and scripts for petroleum engineering 🛢️ automa
 ## [ignition-well-data.py](ignition-well-data.py) 🔥
 - This module serves as a handler for HTTP POST requests to fetch well meter data. It is designed to work within an Ignition environment and interacts with the Ignition system's database and tag history. The handler processes incoming requests, extracts the necessary parameters, fetches data for each specified Unique Well Identifier (UWI), and returns the data in a JSON format.
 
-## [geotab.py] 🚚
+## [geotab.py](geotab.py)🚚
 - This Python module integrates with the Geotab API to fetch and process data related to vehicle trips, drivers, and groups. The script performs data extraction, transformation, and loading (ETL) operations to prepare the data for analysis. It primarily uses the pandas library for data manipulation, along with the json module for handling JSON data structures.
  
 
