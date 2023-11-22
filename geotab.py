@@ -16,7 +16,12 @@ Helper Functions:
    - Inputs: Configuration key and optional filename.
    - Outputs: Corresponding configuration value as a string.
 
-2. get_driver_id:
+2. fetch_data_in_chunks:
+    - Fetches data in chunks from a specified API endpoint between start and end dates.
+    - Inputs: API object, start date, end date, and optional chunk size.
+    - Outputs: List of data fetched in chunks from the API.
+    
+3. get_driver_id:
    - Extracts the driver's ID from a dictionary or string representation of a dictionary.
    - Handles cases where the driver information is either a dictionary or a JSON string.
    - Returns the driver's ID or None if not found.
@@ -63,6 +68,7 @@ structure returned by the API. Any changes in the API's data format may require 
 import mygeotab
 import pandas as pd
 import json
+import datetime
 
 # -----------------
 # Helper Functions
@@ -89,6 +95,43 @@ def get_config_value(key, filename="config.txt"):
             if line.startswith(key):
                 return line.split("=")[1].strip()
     raise ValueError(f"{key} not found in configuration file.")
+
+
+def fetch_data_in_chunks(api, start_date, end_date, chunk_size_days=30):
+    """
+    Fetches data in chunks from a specified API endpoint between start and end dates.
+
+    Args:
+        api: The API object used for making requests.
+        start_date (datetime.date): The start date for fetching data.
+        end_date (datetime.date): The end date for fetching data.
+        chunk_size_days (int, optional): The number of days to include in each data-fetching chunk. Defaults to 30.
+
+    Returns:
+        list: A list of data fetched in chunks from the API.
+    """
+
+    current_start_date = start_date
+    all_trips = []
+
+    while current_start_date < end_date:
+        # Calculate the end date for the current chunk
+        current_end_date = min(
+            current_start_date + datetime.timedelta(days=chunk_size_days), end_date
+        )
+
+        # Fetch data for the current chunk
+        chunk_of_trips = api.get(
+            "Trip",
+            fromDate=current_start_date.strftime("%Y-%m-%d"),
+            toDate=current_end_date.strftime("%Y-%m-%d"),
+        )
+        all_trips.extend(chunk_of_trips)
+
+        # Set the start date for the next chunk to one day after the current end date
+        current_start_date = current_end_date + datetime.timedelta(days=1)
+
+    return all_trips
 
 
 # Helper function to extract driver id from driver info
@@ -141,12 +184,15 @@ if __name__ == "__main__":
     api = mygeotab.API(username, password, database)
     api.authenticate()
 
-    # Get all devices, trips, and drivers
-    trips = api.get(
-        "Trip", resultsLimit=100, fromDate="2023-10-10", toDate="2023-10-12"
-    )
-    drivers = api.get("User", resultsLimit=100)
-    groups = api.get("Group", resultsLimit=100)
+    start_date = datetime.date(2021, 1, 1)
+    end_date = datetime.date.today()
+
+    # Get trips data
+    trips = fetch_data_in_chunks(api, start_date, end_date)
+
+    # Get drivers and groups data
+    drivers = api.get("User", resultsLimit=None)
+    groups = api.get("Group", resultsLimit=None)
 
     # Convert to pandas dataframes
     trips = pd.DataFrame(trips)
@@ -277,7 +323,29 @@ if __name__ == "__main__":
         axis=1,
     )
 
-    print(trips.columns.values)
+    # Print the unique values in groupName
+    # print(trips["groupName"].unique())
+
+    # Only keep rows where groupName is 'Field Hanlan', 'Field East', 'Field PRA', 'Field WCH', 'Field Ferrier', 'Field Gilby'
+    trips = trips[
+        trips["groupName"].isin(
+            [
+                "Field Hanlan",
+                "Field East",
+                "Field PRA",
+                "Field WCH",
+                "Field Ferrier",
+                "Field Gilby",
+            ]
+        )
+    ]
+
+    # Check tripID column for duplicates
+    # print(trips["tripID"].duplicated(keep=False).sum())
+
+    # Slice the dataframe to only include rows where tripID is duplicated, used for debugging
+    # trips = trips[trips["tripID"].duplicated(keep=False)].sort_values(by="tripID")
+
     # -------------------------------------
     # Exporting Data
     # -------------------------------------
