@@ -6,17 +6,17 @@ This repo contains packages and scripts for petroleum engineering 🛢️ automa
 
 - This module provides functions for calculating gas properties and critical flow rates for natural gas wells to unload water using empirical correlations
 
-## [multi-select.py](https://github.com/tysontrail/production-engineering/blob/main/multi-select.py) 📊
-
-- This module provides function scripts for extension functions and a property change event handler for selecting multiple cells in an Ignition Power Table column for bulk value updates.
-
-## [nocodb-loader.py](https://github.com/tysontrail/production-engineering/blob/main/nocodb-loader.py) 💾
+## [nocodb-loader.py](https://github.com/tysontrail/production-engineering/blob/main/nocodb/nocodb-loader.py) 💾
 
 - This module provides utilities for updating a NocoDB database using data from a CSV file.
 
 ## [ignition-well-data.py](ignition-well-data.py) 🔥
 
 - This module serves as a handler for HTTP POST requests to fetch well meter data. It is designed to work within an Ignition environment and interacts with the Ignition system's database and tag history. The handler processes incoming requests, extracts the necessary parameters, fetches data for each specified Unique Well Identifier (UWI), and returns the data in a JSON format.
+
+## [ignition-multi-select.py](https://github.com/tysontrail/production-engineering/blob/main/ignition/multi-select.py) 📊
+
+- This module provides function scripts for extension functions and a property change event handler for selecting multiple cells in an Ignition Power Table column for bulk value updates.
 
 ## [geotab.py](geotab.py)🚚
 
