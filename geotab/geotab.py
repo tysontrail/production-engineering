@@ -20,7 +20,7 @@ Helper Functions:
     - Fetches data in chunks from a specified API endpoint between start and end dates.
     - Inputs: API object, start date, end date, and optional chunk size.
     - Outputs: List of data fetched in chunks from the API.
-    
+
 3. get_driver_id:
    - Extracts the driver's ID from a dictionary or string representation of a dictionary.
    - Handles cases where the driver information is either a dictionary or a JSON string.
@@ -351,6 +351,9 @@ if __name__ == "__main__":
     # -------------------------------------
 
     # Export to CSV
-    trips.to_csv("trips.csv")
+    # trips.to_csv("trips.csv")
     # drivers.to_csv("drivers.csv")
     # groups.to_csv("groups.csv")
+
+    # Export to json
+    # trips = trips.to_json("trips.json")
