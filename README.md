@@ -20,4 +20,4 @@ This repo contains packages and scripts for petroleum engineering 🛢️ automa
 
 ## [geotab.py](geotab/geotab.py)🚚
 
-- This Python module integrates with the Geotab API to fetch and process data related to vehicle trips, drivers, and groups. The script performs data extraction, transformation, and loading (ETL) operations to prepare the data for analysis. It primarily uses the pandas library for data manipulation, along with the json module for handling JSON data structures.
+- This Python module integrates with the Geotab API to fetch and process data related to vehicle trips, drivers, devices, and groups. The script performs data extraction, transformation, and loading (ETL) operations to prepare the data for analysis. It primarily uses the pandas library for data manipulation, along with the json module for handling JSON data structures.
