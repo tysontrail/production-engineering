@@ -32,22 +32,22 @@ Main Script:
   - Authenticates with the Geotab API.
 
 - Data Extraction:
-  - Fetches data related to trips, drivers, and groups from the Geotab API.
+  - Fetches data related to trips, drivers, devices, and groups from the Geotab API.
   - Converts the fetched data into pandas DataFrames for ease of manipulation.
 
 - Data Transformation:
-  - Processes the trips DataFrame by extracting driver IDs using the get_driver_id function
+  - Processes the trips DataFrame by extracting driver and device IDs using the get_id function
     and removing unnecessary columns.
-  - Transforms the drivers DataFrame by exploding the driverGroups column and extracting group IDs.
+  - Transforms the devices DataFrame by exploding the deviceGroups column and extracting group IDs.
   - Performs necessary data cleaning and formatting operations.
 
 - Data Merging:
+  - Merges the devices DataFrame with the trips DataFrame based on device IDs.
   - Merges the trips DataFrame with the drivers DataFrame based on driver IDs.
   - Further merges the resulting DataFrame with the groups DataFrame based on group IDs.
 
 - Final Data Cleaning:
   - Renames columns for clarity and readability.
-  - Drops a significant number of unnecessary columns to streamline the dataset.
 
 - Exporting Data:
   - Exports the final processed DataFrame to a CSV file named 'trips.csv'.
@@ -134,13 +134,13 @@ def fetch_data_in_chunks(api, start_date, end_date, chunk_size_days=30):
     return all_trips
 
 
-# Helper function to extract driver id from driver info
-def get_driver_id(driver_info):
+# Helper function to extract id from info
+def get_id(info):
     """
     Extracts the 'id' value from a dictionary or a string representation of a dictionary.
 
     Parameters:
-    driver_info (dict or str): The data that is expected to be either a dictionary
+    info (dict or str): The data that is expected to be either a dictionary
     or a string representation of a dictionary containing an 'id' key.
 
     Returns:
@@ -148,23 +148,23 @@ def get_driver_id(driver_info):
     """
 
     # Check if driver_info is a dictionary and contains the 'id' key
-    if isinstance(driver_info, dict):
+    if isinstance(info, dict):
         # Retrieve 'id' from the dictionary, return None if 'id' is not present
-        return driver_info.get("id", None)
+        return info.get("id", None)
 
     # Check if driver_info is a string and appears to be a dictionary (starts with '{')
-    elif isinstance(driver_info, str) and driver_info.startswith("{"):
+    elif isinstance(info, str) and info.startswith("{"):
         try:
             # Attempt to parse the string as JSON
-            driver_dict = json.loads(driver_info)
+            info_dict = json.loads(info)
             # Retrieve 'id' from the parsed dictionary, return None if 'id' is not present
-            return driver_dict.get("id", None)
+            return info_dict.get("id", None)
         except json.JSONDecodeError:
             # Handle cases where the string is not valid JSON
             # This could be logged or handled in a specific way if needed
             return None
 
-    # If driver_info is neither a dictionary nor a string representation of a dictionary
+    # If info is neither a dictionary nor a string representation of a dictionary
     else:
         # Return None or handle differently depending on requirements
         return None
@@ -184,20 +184,22 @@ if __name__ == "__main__":
     api = mygeotab.API(username, password, database)
     api.authenticate()
 
-    start_date = datetime.date(2021, 1, 1)
+    start_date = datetime.date(2023, 11, 20)
     end_date = datetime.date.today()
 
     # Get trips data
     trips = fetch_data_in_chunks(api, start_date, end_date)
 
-    # Get drivers and groups data
+    # Get drivers devices, and groups data
     drivers = api.get("User", resultsLimit=None)
     groups = api.get("Group", resultsLimit=None)
+    devices = api.get("Device", resultsLimit=None)
 
     # Convert to pandas dataframes
     trips = pd.DataFrame(trips)
     drivers = pd.DataFrame(drivers)
     groups = pd.DataFrame(groups)
+    devices = pd.DataFrame(devices)
 
     # -------------------------------------
     # Transforming Data
@@ -205,34 +207,265 @@ if __name__ == "__main__":
 
     # Transform trips table
 
-    # Apply the get_driver_id function to each element in the 'driver' column
-    trips["driverid"] = trips["driver"].apply(get_driver_id)
+    # Apply the get_id function to each element in the 'driver' column
+    trips["driverID"] = trips["driver"].apply(get_id)
 
     # Drop the original 'Driver' column
     trips = trips.drop("driver", axis=1)
 
-    # Transform drivers table
+    # Apply the get_id function to each element in the 'device' column
+    trips["deviceID"] = trips["device"].apply(get_id)
 
-    # Explode the driverGroups column
-    drivers = drivers.explode("driverGroups")
+    # Drop the original 'device' column
+    trips = trips.drop("device", axis=1)
+
+    # Transform devices table
+
+    # Explode the deviceGroups column
+    devices = devices.explode("groups")
 
     # Extract the number from the dictionaries in 'driverGroups'
-    drivers["driverGroupID"] = drivers["driverGroups"].apply(
+    devices["deviceGroupID"] = devices["groups"].apply(
         lambda x: x["id"] if isinstance(x, dict) and "id" in x else x
     )
 
     # Drop the original 'driverGroups' column
-    drivers = drivers.drop("driverGroups", axis=1)
+    devices = devices.drop("groups", axis=1)
+
+    # Rename id columns to deviceID, driverID, and groupID
+    devices = devices.rename(columns={"id": "deviceID"})
+    drivers = drivers.rename(columns={"id": "driverID"})
+    groups = groups.rename(columns={"id": "groupID"})
+
+    # Export to CSV for data inspection
+    # trips.to_csv("trips.csv")
+    # drivers.to_csv("drivers.csv")
+    # groups.to_csv("groups.csv")
+    # devices.to_csv("devices.csv")
+
+    # Print Column Names
+    # print("Devices columns: ")
+    # print(devices.columns)
+    # print("Drivers columns: ")
+    # print(drivers.columns)
+    # print("Groups columns: ")
+    # print(groups.columns)
+    # print("Trips columns: ")
+    # print(trips.columns)
+
+    # Keep only the columns we need
+    trips = trips[
+        [
+            "afterHoursDistance",
+            "afterHoursDrivingDuration",
+            "afterHoursEnd",
+            "afterHoursStart",
+            "afterHoursStopDuration",
+            "averageSpeed",
+            "distance",
+            "drivingDuration",
+            "engineHours",
+            "idlingDuration",
+            "isSeatBeltOff",
+            "maximumSpeed",
+            "nextTripStart",
+            # "speedRange1",
+            # "speedRange1Duration",
+            # "speedRange2",
+            # "speedRange2Duration",
+            # "speedRange3",
+            # "speedRange3Duration",
+            "start",
+            "stop",
+            "stopDuration",
+            "stopPoint",
+            "workDistance",
+            "workDrivingDuration",
+            "workStopDuration",
+            "id",
+            "driverID",
+            "deviceID",
+        ]
+    ]
+
+    drivers = drivers[
+        [
+            # "driverGroups",
+            # "keys",
+            # "viewDriversOwnDataOnly",
+            # "licenseProvince",
+            # "licenseNumber",
+            # "acceptedEULA",
+            # "driveGuideVersion",
+            # "wifiEULA",
+            # "activeDashboardReports",
+            # "bookmarks",
+            # "activeFrom",
+            # "activeTo",
+            # "availableDashboardReports",
+            # "cannedResponseOptions",
+            # "changePassword",
+            # "comment",
+            # "companyGroups",
+            # "mediaFiles",
+            # "dateFormat",
+            # "phoneNumber",
+            # "displayCurrency",
+            # "countryCode",
+            # "phoneNumberExtension",
+            # "defaultGoogleMapStyle",
+            # "defaultMapEngine",
+            # "defaultOpenStreetMapStyle",
+            # "defaultHereMapStyle",
+            # "defaultPage",
+            # "designation",
+            # "employeeNo",
+            "firstName",
+            # "fuelEconomyUnit",
+            # "electricEnergyEconomyUnit",
+            # "hosRuleSet",
+            # "isYardMoveEnabled",
+            # "isPersonalConveyanceEnabled",
+            # "isExemptHOSEnabled",
+            # "isAdverseDrivingEnabled",
+            # "authorityName",
+            # "authorityAddress",
+            "driverID",
+            # "isEULAAccepted",
+            # "isNewsEnabled",
+            # "isServiceUpdatesEnabled",
+            # "isLabsEnabled",
+            # "isMetric",
+            # "language",
+            # "firstDayOfWeek",
+            "lastName",
+            # "mapViews",
+            "name",
+            # "privateUserGroups",
+            # "reportGroups",
+            # "securityGroups",
+            # "showClickOnceWarning",
+            # "timeZoneId",
+            # "userAuthenticationType",
+            # "zoneDisplayMode",
+            # "companyName",
+            # "companyAddress",
+            # "carrierNumber",
+            # "lastAccessDate",
+            # "isDriver",
+            # "isEmailReportEnabled",
+            # "featurePreview",
+            # "isAutoAdded",
+            # "activeDefaultDashboards",
+            # "jobPriorities",
+            # "maxPCDistancePerDay",
+            # "accessGroupFilter",
+        ]
+    ]
+
+    groups = groups[
+        [
+            # "isGlobalReportingGroup",
+            # "children",
+            # "color",
+            # "comments",
+            "groupID",
+            "name",
+            # "reference",
+        ]
+    ]
+
+    devices = devices[
+        [
+            # "auxWarningSpeed",
+            # "enableAuxWarning",
+            # "enableControlExternalRelay",
+            # "externalDeviceShutDownDelay",
+            # "immobilizeArming",
+            # "immobilizeUnit",
+            # "isAuxIgnTrigger",
+            # "isAuxInverted",
+            # "accelerationWarningThreshold",
+            # "accelerometerThresholdWarningFactor",
+            # "brakingWarningThreshold",
+            # "corneringWarningThreshold",
+            # "enableBeepOnDangerousDriving",
+            # "enableBeepOnRpm",
+            # "engineHourOffset",
+            # "isActiveTrackingEnabled",
+            # "isDriverSeatbeltWarningOn",
+            # "isPassengerSeatbeltWarningOn",
+            # "isReverseDetectOn",
+            # "isIoxConnectionEnabled",
+            # "odometerFactor",
+            # "odometerOffset",
+            # "rpmValue",
+            # "seatbeltWarningSpeed",
+            # "activeFrom",
+            # "activeTo",
+            # "disableBuzzer",
+            # "enableBeepOnIdle",
+            # "enableSpeedWarning",
+            # "engineType",
+            # "idleMinutes",
+            # "isSpeedIndicator",
+            # "minAccidentSpeed",
+            # "speedingOff",
+            # "speedingOn",
+            # "goTalkLanguage",
+            # "fuelTankCapacity",
+            # "autoGroups",
+            # "customParameters",
+            # "enableMustReprogram",
+            # "engineVehicleIdentificationNumber",
+            # "ensureHotStart",
+            # "gpsOffDelay",
+            "licensePlate",
+            "licenseState",
+            # "major",
+            # "minor",
+            # "parameterVersion",
+            # "pinDevice",
+            "vehicleIdentificationNumber",
+            # "parameterVersionOnDevice",
+            "comment",
+            "timeZoneId",
+            # "deviceType",
+            "deviceID",
+            # "ignoreDownloadsUntil",
+            # "maxSecondsBetweenLogs",
+            "name",
+            # "productId",
+            # "serialNumber",
+            # "timeToDownload",
+            # "workTime",
+            # "customProperties",
+            # "mediaFiles",
+            # "deviceFlags",
+            # "devicePlans",
+            # "devicePlanBillingInfo",
+            # "autoHos",
+            # "customFeatures",
+            # "disableSleeperBerth",
+            # "wifiHotspotLimits",
+            # "isContinuousConnectEnabled",
+            # "obdAlertEnabled",
+            "deviceGroupID",
+        ]
+    ]
 
     # -------------------------------------
     # Merging Data
     # -------------------------------------
 
     # Merge trips and drivers
-    trips = trips.merge(drivers, left_on="driverid", right_on="id", how="left")
+    trips = trips.merge(drivers, left_on="driverID", right_on="driverID", how="left")
+
+    # Merge trips and devices
+    trips = trips.merge(devices, left_on="deviceID", right_on="deviceID", how="left")
 
     # Merge trips and groups
-    trips = trips.merge(groups, left_on="driverGroupID", right_on="id", how="left")
+    trips = trips.merge(groups, left_on="deviceGroupID", right_on="groupID", how="left")
 
     # -------------------------------------
     # Cleaning Data
@@ -241,86 +474,11 @@ if __name__ == "__main__":
     # Rename columns
     trips = trips.rename(
         columns={
-            "id_x": "tripID",
+            "id": "tripID",
+            "name_y": "driverName",
             "name_x": "email",
-            "name_y": "groupName",
+            "name": "groupName",
         }
-    )
-    # Drop unnecessary columns
-    trips = trips.drop(
-        [
-            "id_y",
-            "keys",
-            "viewDriversOwnDataOnly",
-            "licenseProvince",
-            "licenseNumber",
-            "acceptedEULA",
-            "driveGuideVersion",
-            "wifiEULA",
-            "activeDashboardReports",
-            "bookmarks",
-            "availableDashboardReports",
-            "cannedResponseOptions",
-            "changePassword",
-            "comment",
-            "companyGroups",
-            "mediaFiles",
-            "dateFormat",
-            "phoneNumber",
-            "phoneNumberExtension",
-            "designation",
-            "displayCurrency",
-            "countryCode",
-            "phoneNumber",
-            "defaultGoogleMapStyle",
-            "defaultMapEngine",
-            "defaultOpenStreetMapStyle",
-            "defaultHereMapStyle",
-            "defaultPage",
-            "employeeNo",
-            "fuelEconomyUnit",
-            "electricEnergyEconomyUnit",
-            "hosRuleSet",
-            "isYardMoveEnabled",
-            "isPersonalConveyanceEnabled",
-            "isExemptHOSEnabled",
-            "isAdverseDrivingEnabled",
-            "authorityName",
-            "authorityAddress",
-            "isEULAAccepted",
-            "isNewsEnabled",
-            "isServiceUpdatesEnabled",
-            "isLabsEnabled",
-            "isMetric",
-            "language",
-            "firstDayOfWeek",
-            "privateUserGroups",
-            "reportGroups",
-            "securityGroups",
-            "showClickOnceWarning",
-            "timeZoneId",
-            "userAuthenticationType",
-            "zoneDisplayMode",
-            "companyName",
-            "companyAddress",
-            "carrierNumber",
-            "lastAccessDate",
-            "isDriver",
-            "isEmailReportEnabled",
-            "featurePreview",
-            "isAutoAdded",
-            "activeDefaultDashboards",
-            "jobPriorities",
-            "maxPCDistancePerDay",
-            "accessGroupFilter",
-            "isGlobalReportingGroup",
-            "children",
-            "color",
-            "comments",
-            "id",
-            "reference",
-        ],
-        axis=1,
     )
 
     # Print the unique values in groupName
@@ -336,6 +494,7 @@ if __name__ == "__main__":
                 "Field WCH",
                 "Field Ferrier",
                 "Field Gilby",
+                "Field Watelet",
             ]
         )
     ]
@@ -351,9 +510,7 @@ if __name__ == "__main__":
     # -------------------------------------
 
     # Export to CSV
-    # trips.to_csv("trips.csv")
-    # drivers.to_csv("drivers.csv")
-    # groups.to_csv("groups.csv")
+    trips.to_csv("trips.csv")
 
     # Export to json
     # trips = trips.to_json("trips.json")
